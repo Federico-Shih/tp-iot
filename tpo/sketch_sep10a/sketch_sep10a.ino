@@ -29,21 +29,24 @@ const char user_name[] = "BbLqC3W041ZSlg3arnFN"; // aca se debe poner el id del 
 #define RANGE_CC (MAX_CC - MIN_CC)
 
 // SENSORES
-#define TEMPERATURE_SENSOR AI0
-#define HUMIDITY_SENSOR AI0
-#define LEVEL_SENSOR AI0
-#define FLUX_SENSOR DI0
+#define ELECTRICITY_SENSOR AI0
+#define LIGHT_SENSOR AI0
+#define MOVEMENT_SENSOR DI0
 
 float sensorRead[4];
-#define TEMPERATURE_IDX 0
-#define HUMIDITY_IDX 1
-#define LEVEL_IDX 2
-#define FLUX_IDX 3
+#define ELECTRICITY_IDX 0
+#define LIGHT_IDX 1
+//falta un idx 2
+#define MOVEMENT_IDX 3
 
-float temperature = 0;
-float humidity = 0;
-float level = 0;
-float flux = 0;
+float electricity = 0;
+float light = 0;
+float movement = 0;
+
+// DATA KEYS IN T-DATA
+#define ELECTRICITY_KEY "energyConsumed"
+#define LIGHT_KEY "naturalLight"
+#define MOVEMENT_KEY "isOccupied"
 
 char str[7];
 
@@ -92,28 +95,28 @@ float toPercentage(float value) {
 }
 
 void readSensors() {
-    sensorRead[TEMPERATURE_IDX] = analogRead(TEMPERATURE_SENSOR);
-    sensorRead[HUMIDITY_IDX] = analogRead(HUMIDITY_SENSOR);
-    sensorRead[LEVEL_IDX] = analogRead(LEVEL_SENSOR);
+    sensorRead[ELECTRICITY_IDX] = analogRead(ELECTRICITY_SENSOR);
+    sensorRead[LIGHT_IDX] = analogRead(LIGHT_SENSOR);
 
-    temperature = (float(sensorRead[TEMPERATURE_IDX]) * 25 / 100) - 60;
-    humidity = toPercentage(normalizeRead(toMilliAmpers(float(sensorRead[HUMIDITY_IDX]))));
-    level = toPercentage((1 - normalizeRead(toMilliAmpers(float(sensorRead[LEVEL_IDX])))));
+    electricity = float(sensorRead[ELECTRICITY_IDX]);
+    light = toPercentage(normalizeRead(toMilliAmpers(float(sensorRead[LIGHT_IDX]))));
 }
 
 void readPulses() {
-  Serial.print(digitalRead(FLUX_SENSOR));
+  sensorRead[MOVEMENT_IDX] = digitalRead(MOVEMENT_SENSOR);
+
+  movement = sensorRead[MOVEMENT_IDX];
 }
 
 void publishReport() {
-    dtostrf(temperature, 4, 2, str);
-    PublishData("Temperatura",str);
+    dtostrf(electricity, 4, 2, str);
+    PublishData(ELECTRICITY_KEY, str);
 
-    dtostrf(humidity, 4, 2, str);
-    PublishData("Humedad",str);
+    dtostrf(light, 4, 2, str);
+    PublishData(LIGHT_KEY, str);
 
-    dtostrf(level, 4, 2, str);
-    PublishData("Nivel",str);
+    dtostrf(movement, 4, 2, str);
+    PublishData(MOVEMENT_KEY, str);
 }
 
 void loop() 
@@ -123,9 +126,7 @@ void loop()
     sensor_time = millis();
 
     readSensors();
-      readPulses();
-
-    
+    readPulses();
 
     //SerialMon.println(temperature);
     //SerialMon.println(humidity);
